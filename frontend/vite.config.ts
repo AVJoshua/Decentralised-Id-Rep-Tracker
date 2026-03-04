@@ -5,6 +5,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'path'
 
 export default defineConfig({
+  base: '/Decentralised-Id-Rep-Tracker-/',
   plugins: [
     // Node polyfills MUST come first — OPNet uses Buffer, crypto, stream, events
     nodePolyfills({

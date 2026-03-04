@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Landing   from '@/pages/Landing'
@@ -9,7 +9,7 @@ import Disputes  from '@/pages/Disputes'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-0)' }}>
         <Navbar />
         <main className="max-w-6xl mx-auto px-4 py-8">
@@ -28,6 +28,6 @@ export default function App() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
