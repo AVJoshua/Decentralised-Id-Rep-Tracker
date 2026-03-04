@@ -1,0 +1,104 @@
+{
+    "functions": [
+        {
+            "name": "attest",
+            "type": "Function",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "score",
+                    "type": "UINT256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "success",
+                    "type": "BOOL"
+                }
+            ]
+        },
+        {
+            "name": "getScore",
+            "type": "View",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "ADDRESS"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "score",
+                    "type": "UINT256"
+                }
+            ]
+        },
+        {
+            "name": "getReviewCount",
+            "type": "View",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "ADDRESS"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "count",
+                    "type": "UINT32"
+                }
+            ]
+        },
+        {
+            "name": "hasAttested",
+            "type": "View",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "result",
+                    "type": "BOOL"
+                }
+            ]
+        }
+    ],
+    "events": [
+        {
+            "name": "Attested",
+            "values": [
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "score",
+                    "type": "UINT256"
+                }
+            ],
+            "type": "Event"
+        }
+    ]
+}

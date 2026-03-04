@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <polygon
+    points="32,4 60,20 60,44 32,60 4,44 4,20"
+    stroke="#f7931a"
+    stroke-width="3"
+    fill="none"
+  />
+  <text
+    x="32" y="38"
+    text-anchor="middle"
+    font-family="monospace"
+    font-size="18"
+    font-weight="bold"
+    fill="#f7931a"
+  >D</text>
+</svg>

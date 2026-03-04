@@ -1,0 +1,27 @@
+{
+    "name": "@dirt/scripts",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "deploy:identity":  "node --experimental-vm-modules dist/deploy-identity.js",
+        "deploy:reputation": "node --experimental-vm-modules dist/deploy-reputation.js",
+        "deploy:dispute":   "node --experimental-vm-modules dist/deploy-dispute.js",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "opnet": "1.8.1-rc.19",
+        "@btc-vision/transaction": "1.8.0-rc.10",
+        "@btc-vision/bitcoin": "7.0.0-rc.6"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3",
+        "@types/node": "^22.0.0"
+    },
+    "overrides": {
+        "@noble/hashes": "2.0.1",
+        "bip39": {
+            "@noble/hashes": "1.6.1"
+        }
+    }
+}

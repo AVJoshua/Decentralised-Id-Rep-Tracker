@@ -1,0 +1,68 @@
+{
+    "functions": [
+        {
+            "name": "raiseDispute",
+            "type": "Function",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "success",
+                    "type": "BOOL"
+                }
+            ]
+        },
+        {
+            "name": "getDisputeStatus",
+            "type": "View",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "status",
+                    "type": "UINT256"
+                }
+            ]
+        }
+    ],
+    "events": [
+        {
+            "name": "DisputeRaised",
+            "values": [
+                {
+                    "name": "raiser",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                }
+            ],
+            "type": "Event"
+        }
+    ]
+}
