@@ -30,6 +30,18 @@ class DisputeRaisedEvent extends NetEvent {
     }
 }
 
+@final
+class DisputeResolvedEvent extends NetEvent {
+    constructor(subject: Address, attester: Address, outcome: u256) {
+        // 32 (subject) + 32 (attester) + 32 (outcome) = 96 bytes
+        const writer = new BytesWriter(96);
+        writer.writeAddress(subject);
+        writer.writeAddress(attester);
+        writer.writeU256(outcome);
+        super('DisputeResolved', writer);
+    }
+}
+
 // ─── DisputeResolution ───────────────────────────────────────────────────────
 //
 // Storage layout (pointer order is FIXED — never reorder):
@@ -44,8 +56,10 @@ export class DisputeResolution extends OP_NET {
 
     private _disputes: StoredMapU256 = changetype<StoredMapU256>(0);
 
-    private static readonly STATUS_NONE: u256    = u256.Zero;
-    private static readonly STATUS_PENDING: u256 = u256.One;
+    private static readonly STATUS_NONE: u256     = u256.Zero;
+    private static readonly STATUS_PENDING: u256  = u256.One;
+    private static readonly STATUS_RESOLVED: u256 = u256.fromU32(2);
+    private static readonly STATUS_REJECTED: u256 = u256.fromU32(3);
 
     public constructor() {
         super();
@@ -72,6 +86,47 @@ export class DisputeResolution extends OP_NET {
 
         this._disputes.set(key, DisputeResolution.STATUS_PENDING);
         this.emitEvent(new DisputeRaisedEvent(raiser, subject, attester));
+
+        const writer = new BytesWriter(1);
+        writer.writeBoolean(true);
+        return writer;
+    }
+
+    // ── resolveDispute(subject: address, attester: address, outcome: uint256) → bool
+    // Only the subject can settle their own dispute.
+    // outcome must be 2 (Resolved/accepted) or 3 (Rejected/dismissed).
+    @method(
+        { name: 'subject',  type: ABIDataTypes.ADDRESS },
+        { name: 'attester', type: ABIDataTypes.ADDRESS },
+        { name: 'outcome',  type: ABIDataTypes.UINT256 },
+    )
+    @returns({ name: 'success', type: ABIDataTypes.BOOL })
+    @emit('DisputeResolved')
+    public resolveDispute(calldata: Calldata): BytesWriter {
+        const subject: Address  = calldata.readAddress();
+        const attester: Address = calldata.readAddress();
+        const outcome: u256     = calldata.readU256();
+        const sender: Address   = Blockchain.tx.sender;
+
+        // Only the subject of the dispute can settle it
+        if (sender != subject) {
+            throw new Revert('Only the subject can settle this dispute');
+        }
+
+        const key = this.disputeKey(subject, attester);
+        const currentStatus = this._disputes.get(key);
+
+        if (!u256.eq(currentStatus, DisputeResolution.STATUS_PENDING)) {
+            throw new Revert('Dispute is not pending');
+        }
+
+        // outcome must be 2 (resolved) or 3 (rejected)
+        if (!u256.eq(outcome, DisputeResolution.STATUS_RESOLVED) && !u256.eq(outcome, DisputeResolution.STATUS_REJECTED)) {
+            throw new Revert('Invalid outcome: must be 2 (resolved) or 3 (rejected)');
+        }
+
+        this._disputes.set(key, outcome);
+        this.emitEvent(new DisputeResolvedEvent(subject, attester, outcome));
 
         const writer = new BytesWriter(1);
         writer.writeBoolean(true);

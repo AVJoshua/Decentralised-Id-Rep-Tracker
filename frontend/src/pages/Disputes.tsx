@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import DisputeForm from '@/components/DisputeForm'
+import SettleDisputeForm from '@/components/SettleDisputeForm'
+import DisputeNotificationBanner from '@/components/DisputeNotificationBanner'
 import { useDispute } from '@/hooks/useDispute'
+import { useWallet } from '@/hooks/useWallet'
+import { useDisputeNotifications } from '@/hooks/useDisputeNotifications'
 import Badge from '@/components/Badge'
 import Spinner from '@/components/Spinner'
 import type { DisputeStatus } from '@/types'
 
 export default function Disputes() {
   const { getDisputeStatus } = useDispute()
+  const { walletAddress } = useWallet()
+  const { pendingAgainstMe, dismissNotification, markSettled } = useDisputeNotifications(walletAddress)
 
   const [subject, setSubject]         = useState('')
   const [attester, setAttester]       = useState('')
@@ -32,10 +38,14 @@ export default function Disputes() {
           Disputes
         </h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          Check the status of an existing dispute or raise a new one.
+          Check the status of an existing dispute, raise a new one, or settle disputes against you.
         </p>
       </div>
 
+      {/* Notification banner for disputes against current wallet */}
+      <DisputeNotificationBanner disputes={pendingAgainstMe} onDismiss={dismissNotification} />
+
+      {/* Check dispute status */}
       <div
         className="rounded-xl p-6 space-y-4"
         style={{
@@ -60,7 +70,7 @@ export default function Disputes() {
                 type="text"
                 value={val}
                 onChange={e => set(e.target.value)}
-                placeholder="bc1p..."
+                placeholder="opt1p... or bc1p..."
                 className="w-full px-3 py-2 rounded text-sm font-mono focus:outline-none"
                 style={{
                   backgroundColor: 'var(--color-surface-3)',
@@ -95,6 +105,31 @@ export default function Disputes() {
         )}
       </div>
 
+      {/* Settle a dispute against you */}
+      <div
+        className="rounded-xl p-6"
+        style={{
+          backgroundColor: 'var(--color-surface-1)',
+          border: '1px solid var(--color-warning)',
+        }}
+      >
+        <h2
+          className="font-semibold text-sm uppercase tracking-wider mb-5"
+          style={{ color: 'var(--color-warning)' }}
+        >
+          Settle a Dispute
+        </h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          If a dispute has been raised against you, you can accept or dismiss it here.
+          Only the subject of the dispute can settle it.
+        </p>
+        <SettleDisputeForm
+          prefillAttester={pendingAgainstMe[0]?.attester}
+          onSettled={(att) => markSettled(walletAddress ?? '', att)}
+        />
+      </div>
+
+      {/* Raise a new dispute */}
       <div
         className="rounded-xl p-6"
         style={{

@@ -73,6 +73,49 @@ export function useDispute() {
     }
   }, [provider, walletAddress, network])
 
+  // ── Write: resolveDispute ───────────────────────────────────────────────
+  const resolveDispute = useCallback(async (
+    subject: string,
+    attester: string,
+    outcome: bigint,   // 2n = resolved (accept), 3n = rejected (dismiss)
+  ): Promise<boolean> => {
+    if (!walletAddress) throw new Error('Wallet not connected')
+    setLoading(true)
+    setError(null)
+    try {
+      const contract = getDisputeContract()
+      const p = getProvider()
+      const [subjectAddr, attesterAddr] = await Promise.all([
+        resolveAddress(p, subject),
+        resolveAddress(p, attester),
+      ])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sim = await (contract as any).resolveDispute(subjectAddr, attesterAddr, outcome)
+
+      if (sim.revert) {
+        setError(`Simulation reverted: ${sim.revert}`)
+        return false
+      }
+
+      const receipt = await sim.sendTransaction({
+        signer: null,
+        mldsaSigner: null,
+        refundTo: walletAddress,
+        maximumAllowedSatToSpend: 100_000n,
+        network: network ?? OPNET_NETWORK,
+      })
+
+      console.log('ResolveDispute TX:', receipt.transactionId)
+      return true
+    } catch (e) {
+      console.error('resolveDispute error:', e)
+      setError(String(e))
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [provider, walletAddress, network])
+
   // ── Read-only: getDisputeStatus ─────────────────────────────────────────
   const getDisputeStatus = useCallback(async (
     subject: string,
@@ -100,5 +143,5 @@ export function useDispute() {
     }
   }, [provider])
 
-  return { raiseDispute, getDisputeStatus, loading, error }
+  return { raiseDispute, resolveDispute, getDisputeStatus, loading, error }
 }

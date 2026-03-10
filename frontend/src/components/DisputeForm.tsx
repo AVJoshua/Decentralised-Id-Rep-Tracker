@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useDispute } from '@/hooks/useDispute'
+import { useWallet } from '@/hooks/useWallet'
+import { useDisputeNotifications } from '@/hooks/useDisputeNotifications'
 import Spinner from './Spinner'
 
 interface DisputeFormProps {
@@ -14,6 +16,8 @@ export default function DisputeForm({
   onSuccess,
 }: DisputeFormProps) {
   const { raiseDispute, loading, error } = useDispute()
+  const { walletAddress } = useWallet()
+  const { addDispute } = useDisputeNotifications(walletAddress)
 
   const [subject, setSubject]   = useState(prefillSubject)
   const [attester, setAttester] = useState(prefillAttester)
@@ -28,7 +32,13 @@ export default function DisputeForm({
     setTxMsg('')
     const ok = await raiseDispute(subject.trim(), attester.trim())
     if (ok) {
-      setTxMsg('Dispute raised. It will be reviewed on-chain.')
+      // Record the dispute so the subject gets a notification
+      addDispute({
+        subject: subject.trim(),
+        attester: attester.trim(),
+        raiser: walletAddress ?? '',
+      })
+      setTxMsg('Dispute raised successfully! The subject will be notified to settle.')
       onSuccess?.()
     }
   }

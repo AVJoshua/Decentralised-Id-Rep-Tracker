@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useWallet } from '@/hooks/useWallet'
 import { useIdentity } from '@/hooks/useIdentity'
 import { useReputation } from '@/hooks/useReputation'
+import { useDisputeNotifications } from '@/hooks/useDisputeNotifications'
 import IdentityCard from '@/components/IdentityCard'
 import ScoreChart, { type ScoreDataPoint } from '@/components/ScoreChart'
+import DisputeNotificationBanner from '@/components/DisputeNotificationBanner'
 import Spinner from '@/components/Spinner'
 import type { ProfileData } from '@/types'
 
@@ -12,6 +14,7 @@ export default function Dashboard() {
   const { walletAddress } = useWallet()
   const { isRegistered, getProfile, register, loading: idLoading } = useIdentity()
   const { getScore, getReviewCount, loading: repLoading }          = useReputation()
+  const { pendingAgainstMe, dismissNotification } = useDisputeNotifications(walletAddress)
   const navigate = useNavigate()
 
   const [profile, setProfile]       = useState<ProfileData | null>(null)
@@ -60,6 +63,8 @@ export default function Dashboard() {
       <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
         Dashboard
       </h1>
+
+      <DisputeNotificationBanner disputes={pendingAgainstMe} onDismiss={dismissNotification} />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">

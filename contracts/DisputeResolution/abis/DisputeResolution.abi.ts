@@ -10,6 +10,15 @@ export const DisputeResolutionEvents = [
         ],
         type: BitcoinAbiTypes.Event,
     },
+    {
+        name: 'DisputeResolved',
+        values: [
+            { name: 'subject', type: ABIDataTypes.ADDRESS },
+            { name: 'attester', type: ABIDataTypes.ADDRESS },
+            { name: 'outcome', type: ABIDataTypes.UINT256 },
+        ],
+        type: BitcoinAbiTypes.Event,
+    },
 ];
 
 export const DisputeResolutionAbi = [
@@ -18,6 +27,16 @@ export const DisputeResolutionAbi = [
         inputs: [
             { name: 'subject', type: ABIDataTypes.ADDRESS },
             { name: 'attester', type: ABIDataTypes.ADDRESS },
+        ],
+        outputs: [{ name: 'success', type: ABIDataTypes.BOOL }],
+        type: BitcoinAbiTypes.Function,
+    },
+    {
+        name: 'resolveDispute',
+        inputs: [
+            { name: 'subject', type: ABIDataTypes.ADDRESS },
+            { name: 'attester', type: ABIDataTypes.ADDRESS },
+            { name: 'outcome', type: ABIDataTypes.UINT256 },
         ],
         outputs: [{ name: 'success', type: ABIDataTypes.BOOL }],
         type: BitcoinAbiTypes.Function,

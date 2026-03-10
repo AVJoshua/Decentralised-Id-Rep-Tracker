@@ -14,6 +14,18 @@ export const DISPUTE_RESOLUTION_ABI: BitcoinInterfaceAbi = [
     ],
   },
   {
+    name: 'resolveDispute',
+    type: BitcoinAbiTypes.Function,
+    inputs: [
+      { name: 'subject',  type: ABIDataTypes.ADDRESS },
+      { name: 'attester', type: ABIDataTypes.ADDRESS },
+      { name: 'outcome',  type: ABIDataTypes.UINT256 },
+    ],
+    outputs: [
+      { name: 'success', type: ABIDataTypes.BOOL },
+    ],
+  },
+  {
     name: 'getDisputeStatus',
     type: BitcoinAbiTypes.Function,
     inputs: [

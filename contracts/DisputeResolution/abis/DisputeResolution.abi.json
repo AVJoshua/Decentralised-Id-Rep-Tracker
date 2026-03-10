@@ -23,6 +23,32 @@
             ]
         },
         {
+            "name": "resolveDispute",
+            "type": "Function",
+            "payable": false,
+            "onlyOwner": false,
+            "inputs": [
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "outcome",
+                    "type": "UINT256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "success",
+                    "type": "BOOL"
+                }
+            ]
+        },
+        {
             "name": "getDisputeStatus",
             "type": "View",
             "payable": false,
@@ -60,6 +86,24 @@
                 {
                     "name": "attester",
                     "type": "ADDRESS"
+                }
+            ],
+            "type": "Event"
+        },
+        {
+            "name": "DisputeResolved",
+            "values": [
+                {
+                    "name": "subject",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "attester",
+                    "type": "ADDRESS"
+                },
+                {
+                    "name": "outcome",
+                    "type": "UINT256"
                 }
             ],
             "type": "Event"
