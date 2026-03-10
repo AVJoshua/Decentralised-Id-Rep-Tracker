@@ -5,7 +5,7 @@ import { networks } from '@btc-vision/bitcoin'
 export const CONTRACT_ADDRESSES = {
   IDENTITY_REGISTRY:  import.meta.env.VITE_IDENTITY_REGISTRY  ?? 'opt1sqpkzhw93evjcgcrgp5e53udmvr5xlqyx4yga7qug',
   REPUTATION_LEDGER:  import.meta.env.VITE_REPUTATION_LEDGER  ?? 'opt1sqp6hcqc3yt2uclve8d2pdxyf0tla9en9kgfmvk39',
-  DISPUTE_RESOLUTION: import.meta.env.VITE_DISPUTE_RESOLUTION ?? 'opt1sqze20rkg0phnw5u9ps9gs8257qpwucvklu576qu7',
+  DISPUTE_RESOLUTION: import.meta.env.VITE_DISPUTE_RESOLUTION ?? 'opt1sqrve0hahkfcncewfkrnqjj9d5ceuh59xfgf22pn6',
 } as const
 
 // ─── Network ───────────────────────────────────────────────────────────────────
