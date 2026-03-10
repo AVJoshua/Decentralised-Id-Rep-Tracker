@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useWallet } from '@/hooks/useWallet'
 import { useIdentity } from '@/hooks/useIdentity'
 import { useReputation } from '@/hooks/useReputation'
+import { useDisputeNotifications } from '@/hooks/useDisputeNotifications'
 import IdentityCard from '@/components/IdentityCard'
 import AttestationForm from '@/components/AttestationForm'
 import DisputeForm from '@/components/DisputeForm'
@@ -57,9 +58,11 @@ export default function Profile() {
   const { walletAddress } = useWallet()
   const { isRegistered, getProfile } = useIdentity()
   const { getScore, getReviewCount } = useReputation()
+  const { countsForAddress } = useDisputeNotifications(walletAddress)
 
   const targetAddress = paramAddress ?? walletAddress ?? ''
   const isOwner = targetAddress.toLowerCase() === (walletAddress?.toLowerCase() ?? '')
+  const disputeCounts = countsForAddress(targetAddress)
 
   const [profile, setProfile]     = useState<ProfileData | null>(null)
   const [loading, setLoading]     = useState(true)
@@ -110,6 +113,53 @@ export default function Profile() {
           <ScoreChart data={chartData} />
         </div>
       </div>
+
+      {/* Dispute Stats */}
+      {disputeCounts.total > 0 && (
+        <div
+          className="rounded-xl p-6"
+          style={{
+            backgroundColor: 'var(--color-surface-1)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <h2
+            className="font-semibold text-sm uppercase tracking-wider mb-4"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            Dispute History
+          </h2>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div
+              className="rounded-lg p-4"
+              style={{ backgroundColor: 'var(--color-surface-3)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-warning)' }}>
+                {disputeCounts.pending}
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Pending</p>
+            </div>
+            <div
+              className="rounded-lg p-4"
+              style={{ backgroundColor: 'var(--color-surface-3)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-success)' }}>
+                {disputeCounts.accepted}
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Accepted</p>
+            </div>
+            <div
+              className="rounded-lg p-4"
+              style={{ backgroundColor: 'var(--color-surface-3)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-error)' }}>
+                {disputeCounts.dismissed}
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Dismissed</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div
         className="rounded-xl p-6"

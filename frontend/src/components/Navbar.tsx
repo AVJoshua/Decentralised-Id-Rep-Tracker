@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import WalletButton from './WalletButton'
 import { useWallet } from '@/hooks/useWallet'
+import { useDisputeNotifications } from '@/hooks/useDisputeNotifications'
 import { APP_CONFIG } from '@/config'
 
 const NAV_LINKS = [
@@ -12,11 +13,13 @@ const NAV_LINKS = [
 ]
 
 export default function Navbar() {
-  const { isConnected } = useWallet()
+  const { isConnected, walletAddress } = useWallet()
+  const { pendingAgainstMe } = useDisputeNotifications(walletAddress)
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const activePath = location.pathname
+  const pendingCount = pendingAgainstMe.length
 
   return (
     <nav
@@ -41,17 +44,26 @@ export default function Navbar() {
           <ul className="hidden sm:flex items-center gap-1 flex-1">
             {NAV_LINKS.map(({ to, label }) => {
               const active = activePath.startsWith(to)
+              const showBadge = to === '/disputes' && pendingCount > 0
               return (
                 <li key={to}>
                   <Link
                     to={to}
-                    className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+                    className="relative px-3 py-1.5 rounded text-sm font-medium transition-colors"
                     style={{
                       color: active ? 'var(--color-btc)' : 'var(--color-text-secondary)',
                       backgroundColor: active ? 'rgba(247,147,26,0.1)' : 'transparent',
                     }}
                   >
                     {label}
+                    {showBadge && (
+                      <span
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold"
+                        style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
+                      >
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               )
@@ -96,18 +108,27 @@ export default function Navbar() {
           <ul className="flex flex-col py-2 px-4 gap-1">
             {NAV_LINKS.map(({ to, label }) => {
               const active = activePath.startsWith(to)
+              const showBadge = to === '/disputes' && pendingCount > 0
               return (
                 <li key={to}>
                   <Link
                     to={to}
                     onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 rounded text-sm font-medium"
+                    className="flex items-center justify-between px-3 py-2.5 rounded text-sm font-medium"
                     style={{
                       color: active ? 'var(--color-btc)' : 'var(--color-text-secondary)',
                       backgroundColor: active ? 'rgba(247,147,26,0.1)' : 'transparent',
                     }}
                   >
                     {label}
+                    {showBadge && (
+                      <span
+                        className="min-w-[20px] h-[20px] flex items-center justify-center rounded-full text-[10px] font-bold"
+                        style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
+                      >
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               )
