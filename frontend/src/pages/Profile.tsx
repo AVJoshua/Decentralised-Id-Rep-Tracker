@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useWallet } from '@/hooks/useWallet'
 import { useIdentity } from '@/hooks/useIdentity'
@@ -10,6 +10,47 @@ import EditProfileForm from '@/components/EditProfileForm'
 import ScoreChart, { type ScoreDataPoint } from '@/components/ScoreChart'
 import Spinner from '@/components/Spinner'
 import type { ProfileData } from '@/types'
+
+function RegisterIdentitySection({ onRegistered }: { onRegistered: () => void }) {
+  const { register, loading, error } = useIdentity()
+  const [txMsg, setTxMsg] = useState('')
+
+  const handleRegister = useCallback(async () => {
+    setTxMsg('')
+    const ok = await register()
+    if (ok) {
+      setTxMsg('Identity registered on-chain!')
+      onRegistered()
+    }
+  }, [register, onRegistered])
+
+  return (
+    <div className="space-y-4">
+      <h2
+        className="font-semibold text-sm uppercase tracking-wider"
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
+        Register Identity
+      </h2>
+      <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+        You must register your identity on-chain before you can set a profile or receive attestations.
+      </p>
+
+      {error && <p className="text-sm" style={{ color: 'var(--color-error)' }}>Error: {error}</p>}
+      {txMsg && <p className="text-sm" style={{ color: 'var(--color-success)' }}>{txMsg}</p>}
+
+      <button
+        onClick={() => void handleRegister()}
+        disabled={loading}
+        className="w-full py-2.5 rounded font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+        style={{ backgroundColor: 'var(--color-btc)', color: '#000' }}
+      >
+        {loading && <Spinner size="sm" />}
+        {loading ? 'Registering...' : 'Register Identity'}
+      </button>
+    </div>
+  )
+}
 
 export default function Profile() {
   const { address: paramAddress } = useParams<{ address?: string }>()
@@ -79,16 +120,22 @@ export default function Profile() {
       >
         {isOwner ? (
           <>
-            <h2
-              className="font-semibold text-sm uppercase tracking-wider mb-5"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Edit Profile
-            </h2>
-            <EditProfileForm
-              currentCid={profile.cid}
-              onSuccess={cid => setProfile(prev => prev ? { ...prev, cid } : prev)}
-            />
+            {!profile.isRegistered ? (
+              <RegisterIdentitySection onRegistered={() => setProfile(prev => prev ? { ...prev, isRegistered: true } : prev)} />
+            ) : (
+              <>
+                <h2
+                  className="font-semibold text-sm uppercase tracking-wider mb-5"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Edit Profile
+                </h2>
+                <EditProfileForm
+                  currentCid={profile.cid}
+                  onSuccess={cid => setProfile(prev => prev ? { ...prev, cid } : prev)}
+                />
+              </>
+            )}
           </>
         ) : (
           <>

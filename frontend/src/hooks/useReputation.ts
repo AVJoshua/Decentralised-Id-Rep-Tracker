@@ -4,15 +4,10 @@ import type { AbstractRpcProvider } from 'opnet'
 import { useWallet } from './useWallet'
 import { CONTRACT_ADDRESSES, OPNET_NETWORK } from '@/config'
 import { REPUTATION_LEDGER_ABI } from '@/abis/ReputationLedger.abi'
-import type {
-  GetScoreResult,
-  GetReviewCountResult,
-  HasAttestedResult,
-  AttestResult,
-} from '@/types'
+import { resolveAddress } from './useAddressResolver'
 
 export function useReputation() {
-  const { provider, walletAddress } = useWallet()
+  const { provider, walletAddress, address, network } = useWallet()
 
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -25,18 +20,28 @@ export function useReputation() {
       provider as unknown as AbstractRpcProvider,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       OPNET_NETWORK as any,
+      address ?? undefined,
     )
   }
 
-  const getScore = useCallback(async (address?: string): Promise<bigint> => {
-    const target = address ?? walletAddress
+  function getProvider(): AbstractRpcProvider {
+    if (!provider) throw new Error('Wallet not connected')
+    return provider as unknown as AbstractRpcProvider
+  }
+
+  // ── Read-only: getScore ─────────────────────────────────────────────────
+  const getScore = useCallback(async (addr?: string): Promise<bigint> => {
+    const target = addr ?? walletAddress
     if (!target) return 0n
     setLoading(true)
     setError(null)
     try {
-      const contract = getReputationContract() as unknown as { getScore: (a: string) => Promise<GetScoreResult> }
-      const result = await contract.getScore(target)
-      return result.score
+      const contract = getReputationContract()
+      const addrObj = await resolveAddress(getProvider(), target)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (contract as any).getScore(addrObj)
+      if (result.revert) return 0n
+      return result.properties?.score ?? 0n
     } catch (e) {
       setError(String(e))
       return 0n
@@ -45,15 +50,19 @@ export function useReputation() {
     }
   }, [provider, walletAddress])
 
-  const getReviewCount = useCallback(async (address?: string): Promise<number> => {
-    const target = address ?? walletAddress
+  // ── Read-only: getReviewCount ───────────────────────────────────────────
+  const getReviewCount = useCallback(async (addr?: string): Promise<number> => {
+    const target = addr ?? walletAddress
     if (!target) return 0
     setLoading(true)
     setError(null)
     try {
-      const contract = getReputationContract() as unknown as { getReviewCount: (a: string) => Promise<GetReviewCountResult> }
-      const result = await contract.getReviewCount(target)
-      return result.count
+      const contract = getReputationContract()
+      const addrObj = await resolveAddress(getProvider(), target)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (contract as any).getReviewCount(addrObj)
+      if (result.revert) return 0
+      return Number(result.properties?.count ?? 0)
     } catch (e) {
       setError(String(e))
       return 0
@@ -62,6 +71,7 @@ export function useReputation() {
     }
   }, [provider, walletAddress])
 
+  // ── Read-only: hasAttested ──────────────────────────────────────────────
   const hasAttested = useCallback(async (
     attester: string,
     subject: string,
@@ -69,9 +79,16 @@ export function useReputation() {
     setLoading(true)
     setError(null)
     try {
-      const contract = getReputationContract() as unknown as { hasAttested: (a: string, s: string) => Promise<HasAttestedResult> }
-      const result = await contract.hasAttested(attester, subject)
-      return result.result
+      const contract = getReputationContract()
+      const p = getProvider()
+      const [attesterAddr, subjectAddr] = await Promise.all([
+        resolveAddress(p, attester),
+        resolveAddress(p, subject),
+      ])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (contract as any).hasAttested(attesterAddr, subjectAddr)
+      if (result.revert) return false
+      return result.properties?.result ?? false
     } catch (e) {
       setError(String(e))
       return false
@@ -80,23 +97,43 @@ export function useReputation() {
     }
   }, [provider])
 
+  // ── Write: attest ───────────────────────────────────────────────────────
   const attest = useCallback(async (
     subject: string,
     score: number,
   ): Promise<boolean> => {
+    if (!walletAddress) throw new Error('Wallet not connected')
     setLoading(true)
     setError(null)
     try {
-      const contract = getReputationContract() as unknown as { attest: (s: string, sc: bigint) => Promise<AttestResult> }
-      const result = await contract.attest(subject, BigInt(score))
-      return result.success
+      const contract = getReputationContract()
+      const subjectAddr = await resolveAddress(getProvider(), subject)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sim = await (contract as any).attest(subjectAddr, BigInt(score))
+
+      if (sim.revert) {
+        setError(`Simulation reverted: ${sim.revert}`)
+        return false
+      }
+
+      const receipt = await sim.sendTransaction({
+        signer: null,
+        mldsaSigner: null,
+        refundTo: walletAddress,
+        maximumAllowedSatToSpend: 100_000n,
+        network: network ?? OPNET_NETWORK,
+      })
+
+      console.log('Attest TX:', receipt.transactionId)
+      return true
     } catch (e) {
+      console.error('attest error:', e)
       setError(String(e))
       return false
     } finally {
       setLoading(false)
     }
-  }, [provider])
+  }, [provider, walletAddress, network])
 
   return { getScore, getReviewCount, hasAttested, attest, loading, error }
 }

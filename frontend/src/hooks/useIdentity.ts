@@ -4,20 +4,14 @@ import type { AbstractRpcProvider } from 'opnet'
 import { useWallet } from './useWallet'
 import { CONTRACT_ADDRESSES, OPNET_NETWORK } from '@/config'
 import { IDENTITY_REGISTRY_ABI } from '@/abis/IdentityRegistry.abi'
-import type {
-  IsRegisteredResult,
-  GetProfileResult,
-  RegisterResult,
-  SetProfileResult,
-} from '@/types'
+import { resolveAddress } from './useAddressResolver'
 
 export function useIdentity() {
-  const { provider, walletAddress } = useWallet()
+  const { provider, walletAddress, address, network } = useWallet()
 
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
 
-  // Cast provider to opnet's AbstractRpcProvider to resolve peer dep version mismatch
   function getIdentityContract() {
     if (!provider) throw new Error('Wallet not connected')
     return getContract(
@@ -26,18 +20,28 @@ export function useIdentity() {
       provider as unknown as AbstractRpcProvider,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       OPNET_NETWORK as any,
+      address ?? undefined,
     )
   }
 
-  const isRegistered = useCallback(async (address?: string): Promise<boolean> => {
-    const target = address ?? walletAddress
+  function getProvider(): AbstractRpcProvider {
+    if (!provider) throw new Error('Wallet not connected')
+    return provider as unknown as AbstractRpcProvider
+  }
+
+  // ── Read-only: isRegistered ─────────────────────────────────────────────
+  const isRegistered = useCallback(async (addr?: string): Promise<boolean> => {
+    const target = addr ?? walletAddress
     if (!target) return false
     setLoading(true)
     setError(null)
     try {
-      const contract = getIdentityContract() as unknown as { isRegistered: (a: string) => Promise<IsRegisteredResult> }
-      const result = await contract.isRegistered(target)
-      return result.registered
+      const contract = getIdentityContract()
+      const addrObj = await resolveAddress(getProvider(), target)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (contract as any).isRegistered(addrObj)
+      if (result.revert) return false
+      return result.properties?.registered ?? false
     } catch (e) {
       setError(String(e))
       return false
@@ -46,15 +50,19 @@ export function useIdentity() {
     }
   }, [provider, walletAddress])
 
-  const getProfile = useCallback(async (address?: string): Promise<string> => {
-    const target = address ?? walletAddress
+  // ── Read-only: getProfile ───────────────────────────────────────────────
+  const getProfile = useCallback(async (addr?: string): Promise<string> => {
+    const target = addr ?? walletAddress
     if (!target) return ''
     setLoading(true)
     setError(null)
     try {
-      const contract = getIdentityContract() as unknown as { getProfile: (a: string) => Promise<GetProfileResult> }
-      const result = await contract.getProfile(target)
-      return result.profile
+      const contract = getIdentityContract()
+      const addrObj = await resolveAddress(getProvider(), target)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (contract as any).getProfile(addrObj)
+      if (result.revert) return ''
+      return result.properties?.profile ?? ''
     } catch (e) {
       setError(String(e))
       return ''
@@ -63,38 +71,77 @@ export function useIdentity() {
     }
   }, [provider, walletAddress])
 
-  const register = useCallback(async (
-    sig: Uint8Array,
-    msgHash: Uint8Array,
-  ): Promise<boolean> => {
+  // ── Write: register ─────────────────────────────────────────────────────
+  const register = useCallback(async (): Promise<boolean> => {
+    if (!walletAddress) throw new Error('Wallet not connected')
     setLoading(true)
     setError(null)
     try {
-      const contract = getIdentityContract() as unknown as { register: (s: Uint8Array, m: Uint8Array) => Promise<RegisterResult> }
-      const result = await contract.register(sig, msgHash)
-      return result.success
-    } catch (e) {
-      setError(String(e))
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }, [provider])
+      const contract = getIdentityContract()
+      // sig and msgHash are read & discarded by the contract — pass empty bytes
+      const emptySig = new Uint8Array(0)
+      const emptyHash = new Uint8Array(0)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sim = await (contract as any).register(emptySig, emptyHash)
 
-  const setProfile = useCallback(async (cid: string): Promise<boolean> => {
-    setLoading(true)
-    setError(null)
-    try {
-      const contract = getIdentityContract() as unknown as { setProfile: (c: string) => Promise<SetProfileResult> }
-      const result = await contract.setProfile(cid)
-      return result.success
+      if (sim.revert) {
+        setError(`Simulation reverted: ${sim.revert}`)
+        return false
+      }
+
+      // Send the transaction — frontend: signer=null, wallet handles signing
+      const receipt = await sim.sendTransaction({
+        signer: null,
+        mldsaSigner: null,
+        refundTo: walletAddress,
+        maximumAllowedSatToSpend: 100_000n,
+        network: network ?? OPNET_NETWORK,
+      })
+
+      console.log('Register TX:', receipt.transactionId)
+      return true
     } catch (e) {
+      console.error('register error:', e)
       setError(String(e))
       return false
     } finally {
       setLoading(false)
     }
-  }, [provider])
+  }, [provider, walletAddress, network])
+
+  // ── Write: setProfile ───────────────────────────────────────────────────
+  const setProfile = useCallback(async (cid: string): Promise<boolean> => {
+    if (!walletAddress) throw new Error('Wallet not connected')
+    setLoading(true)
+    setError(null)
+    try {
+      const contract = getIdentityContract()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sim = await (contract as any).setProfile(cid)
+
+      if (sim.revert) {
+        setError(`Simulation reverted: ${sim.revert}`)
+        return false
+      }
+
+      const receipt = await sim.sendTransaction({
+        signer: null,
+        mldsaSigner: null,
+        refundTo: walletAddress,
+        maximumAllowedSatToSpend: 100_000n,
+        network: network ?? OPNET_NETWORK,
+      })
+
+      console.log('SetProfile TX:', receipt.transactionId)
+      return true
+    } catch (e) {
+      console.error('setProfile error:', e)
+      setError(String(e))
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [provider, walletAddress, network])
 
   return { isRegistered, getProfile, register, setProfile, loading, error }
 }

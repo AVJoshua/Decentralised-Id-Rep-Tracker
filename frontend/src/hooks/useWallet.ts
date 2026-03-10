@@ -14,7 +14,10 @@ export function useWallet() {
     isConnected,
     publicKey:        wc.publicKey,
     walletAddress:    wc.walletAddress,
+    address:          wc.address,          // Address object (has .toHex())
     provider:         wc.provider,
+    signer:           wc.signer,
+    network:          wc.network,
     openConnectModal: wc.openConnectModal,
     disconnect:       wc.disconnect,
     raw:              wc,
