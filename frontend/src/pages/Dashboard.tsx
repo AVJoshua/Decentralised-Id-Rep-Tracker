@@ -40,9 +40,7 @@ export default function Dashboard() {
   async function handleRegister() {
     setRegLoading(true)
     try {
-      const msgHash = new TextEncoder().encode(`DIRT:register:${walletAddress ?? ''}`)
-      const sig = new Uint8Array(64)
-      await register(sig, msgHash)
+      await register()
       await loadProfile()
     } finally {
       setRegLoading(false)
