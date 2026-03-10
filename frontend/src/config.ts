@@ -4,9 +4,9 @@ import { networks } from '@btc-vision/bitcoin'
 // Replace via .env.local once contracts are deployed to OPNet testnet.
 // Format: bc1p... (Taproot P2TR)
 export const CONTRACT_ADDRESSES = {
-  IDENTITY_REGISTRY:  import.meta.env['VITE_IDENTITY_REGISTRY']  ?? 'bc1p__IDENTITY_REGISTRY_PLACEHOLDER__',
-  REPUTATION_LEDGER:  import.meta.env['VITE_REPUTATION_LEDGER']  ?? 'bc1p__REPUTATION_LEDGER_PLACEHOLDER__',
-  DISPUTE_RESOLUTION: import.meta.env['VITE_DISPUTE_RESOLUTION'] ?? 'bc1p__DISPUTE_RESOLUTION_PLACEHOLDER__',
+  IDENTITY_REGISTRY:  import.meta.env.VITE_IDENTITY_REGISTRY  ?? 'bc1p__IDENTITY_REGISTRY_PLACEHOLDER__',
+  REPUTATION_LEDGER:  import.meta.env.VITE_REPUTATION_LEDGER  ?? 'bc1p__REPUTATION_LEDGER_PLACEHOLDER__',
+  DISPUTE_RESOLUTION: import.meta.env.VITE_DISPUTE_RESOLUTION ?? 'bc1p__DISPUTE_RESOLUTION_PLACEHOLDER__',
 } as const
 
 // ─── Network ───────────────────────────────────────────────────────────────────
