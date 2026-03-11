@@ -80,8 +80,9 @@ export class DisputeResolution extends OP_NET {
 
         const key = this.disputeKey(subject, attester);
 
-        if (!u256.eq(this._disputes.get(key), DisputeResolution.STATUS_NONE)) {
-            throw new Revert('Dispute already exists');
+        const currentStatus = this._disputes.get(key);
+        if (u256.eq(currentStatus, DisputeResolution.STATUS_PENDING)) {
+            throw new Revert('Dispute already pending');
         }
 
         this._disputes.set(key, DisputeResolution.STATUS_PENDING);
