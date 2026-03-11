@@ -47,6 +47,20 @@ function DisputeRow({
         </div>
       )}
 
+      {dispute.reason && (
+        <div
+          className="rounded p-3 text-sm"
+          style={{
+            backgroundColor: 'var(--color-surface-0, var(--color-surface-1))',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Reason</p>
+          {dispute.reason}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"

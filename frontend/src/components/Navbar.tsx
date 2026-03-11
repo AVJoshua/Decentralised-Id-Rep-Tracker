@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import WalletButton from './WalletButton'
+import ThemeToggle from './ThemeToggle'
 import { useWallet } from '@/hooks/useWallet'
 import { useDisputeNotifications } from '@/hooks/useDisputeNotifications'
 import { APP_CONFIG } from '@/config'
@@ -72,6 +73,7 @@ export default function Navbar() {
         )}
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <WalletButton />
 
           {/* Mobile hamburger */}

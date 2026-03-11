@@ -5,6 +5,8 @@ export interface DisputeRecord {
   attester: string
   raiser: string
   timestamp: number
+  /** Short reason/message from the dispute raiser */
+  reason?: string
   /** 'accepted' | 'dismissed' | undefined (still pending) */
   outcome?: 'accepted' | 'dismissed'
 }

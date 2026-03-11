@@ -21,6 +21,7 @@ export default function DisputeForm({
 
   const [subject, setSubject]   = useState(prefillSubject)
   const [attester, setAttester] = useState(prefillAttester)
+  const [reason, setReason]     = useState('')
   const [txMsg, setTxMsg]       = useState('')
 
   useEffect(() => { setSubject(prefillSubject) },   [prefillSubject])
@@ -37,10 +38,18 @@ export default function DisputeForm({
         subject: subject.trim(),
         attester: attester.trim(),
         raiser: walletAddress ?? '',
+        reason: reason.trim() || undefined,
       })
       setTxMsg('Dispute raised successfully! The subject will be notified to settle.')
+      setReason('')
       onSuccess?.()
     }
+  }
+
+  const inputStyle = {
+    backgroundColor: 'var(--color-surface-3)',
+    border: '1px solid var(--color-border)',
+    color: 'var(--color-text-primary)',
   }
 
   const fields = [
@@ -60,20 +69,37 @@ export default function DisputeForm({
             type="text"
             value={value}
             onChange={e => set(e.target.value)}
-            placeholder="bc1p..."
+            placeholder="opt1p... or bc1p..."
             required
             className="w-full px-3 py-2 rounded text-sm font-mono focus:outline-none"
-            style={{
-              backgroundColor: 'var(--color-surface-3)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
+            style={inputStyle}
             onFocus={e => (e.target.style.borderColor = 'var(--color-btc)')}
             onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
           />
           <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{hint}</p>
         </div>
       ))}
+
+      <div className="space-y-1.5">
+        <label htmlFor="dispute-reason" className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+          Reason <span className="font-normal" style={{ color: 'var(--color-text-muted)' }}>(optional)</span>
+        </label>
+        <textarea
+          id="dispute-reason"
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          placeholder="Briefly describe why you are disputing this attestation..."
+          maxLength={280}
+          rows={3}
+          className="w-full px-3 py-2 rounded text-sm focus:outline-none resize-none"
+          style={inputStyle}
+          onFocus={e => (e.target.style.borderColor = 'var(--color-btc)')}
+          onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+        />
+        <p className="text-xs text-right" style={{ color: 'var(--color-text-muted)' }}>
+          {reason.length}/280
+        </p>
+      </div>
 
       {error && <p className="text-sm" style={{ color: 'var(--color-error)' }}>Error: {error}</p>}
       {txMsg && <p className="text-sm" style={{ color: 'var(--color-success)' }}>{txMsg}</p>}
