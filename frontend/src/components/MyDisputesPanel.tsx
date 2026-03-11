@@ -35,11 +35,17 @@ function DisputeRow({
         <Badge variant="pending" />
       </div>
 
-      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-        <span>Raised by: <span className="font-mono">{dispute.raiser.slice(0, 12)}...{dispute.raiser.slice(-6)}</span></span>
-        <span>|</span>
-        <span>{new Date(dispute.timestamp).toLocaleDateString()}</span>
-      </div>
+      {dispute.raiser && (
+        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <span>Raised by: <span className="font-mono">{dispute.raiser.slice(0, 12)}...{dispute.raiser.slice(-6)}</span></span>
+          {dispute.timestamp > 0 && (
+            <>
+              <span>|</span>
+              <span>{new Date(dispute.timestamp).toLocaleDateString()}</span>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <button
@@ -69,12 +75,17 @@ function DisputeRow({
 
 export default function MyDisputesPanel() {
   const { walletAddress } = useWallet()
-  const { resolveDispute, error } = useDispute()
-  const { pendingAgainstMe, markSettled, myCounts } = useDisputeNotifications(walletAddress)
+  const { resolveDispute, getDisputeStatus, error } = useDispute()
+  const { pendingAgainstMe, markSettled, addDispute, myCounts } = useDisputeNotifications(walletAddress)
 
-  const [settling, setSettling] = useState<string | null>(null)
-  const [txMsg, setTxMsg]       = useState('')
+  const [settling, setSettling]       = useState<string | null>(null)
+  const [txMsg, setTxMsg]             = useState('')
   const [settleError, setSettleError] = useState<string | null>(null)
+
+  // Manual lookup state
+  const [lookupAttester, setLookupAttester] = useState('')
+  const [lookupLoading, setLookupLoading]   = useState(false)
+  const [lookupResult, setLookupResult]     = useState<string | null>(null)
 
   async function handleSettle(attester: string, outcome: 'accepted' | 'dismissed') {
     if (!walletAddress) return
@@ -100,6 +111,32 @@ export default function MyDisputesPanel() {
     }
   }
 
+  async function handleLookup() {
+    if (!walletAddress || !lookupAttester.trim()) return
+    setLookupLoading(true)
+    setLookupResult(null)
+    setSettleError(null)
+    try {
+      const status = await getDisputeStatus(walletAddress, lookupAttester.trim())
+      if (status === 'pending') {
+        // Add to local registry so it shows up in the list
+        addDispute({
+          subject: walletAddress,
+          attester: lookupAttester.trim(),
+          raiser: '',
+        })
+        setLookupResult('pending')
+        setLookupAttester('')
+      } else {
+        setLookupResult(status)
+      }
+    } catch (e) {
+      setSettleError(String(e))
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Summary stats */}
@@ -121,11 +158,7 @@ export default function MyDisputesPanel() {
       )}
 
       {/* Pending disputes list */}
-      {pendingAgainstMe.length === 0 ? (
-        <p className="text-sm py-4 text-center" style={{ color: 'var(--color-text-muted)' }}>
-          No pending disputes against you.
-        </p>
-      ) : (
+      {pendingAgainstMe.length > 0 && (
         <div className="space-y-3">
           {pendingAgainstMe.map(d => (
             <DisputeRow
@@ -137,6 +170,63 @@ export default function MyDisputesPanel() {
           ))}
         </div>
       )}
+
+      {pendingAgainstMe.length === 0 && (
+        <p className="text-sm py-2 text-center" style={{ color: 'var(--color-text-muted)' }}>
+          No pending disputes found in local registry.
+        </p>
+      )}
+
+      {/* Manual lookup — find disputes not in local registry */}
+      <div
+        className="rounded-lg p-4 space-y-3"
+        style={{
+          backgroundColor: 'var(--color-surface-2, var(--color-surface-3))',
+          border: '1px dashed var(--color-border)',
+        }}
+      >
+        <p className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+          Look up a dispute by attester address
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={lookupAttester}
+            onChange={e => { setLookupAttester(e.target.value); setLookupResult(null) }}
+            placeholder="Attester address..."
+            className="flex-1 px-3 py-2 rounded text-sm font-mono focus:outline-none"
+            style={{
+              backgroundColor: 'var(--color-surface-3)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-primary)',
+            }}
+            onFocus={e => (e.target.style.borderColor = 'var(--color-btc)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+          />
+          <button
+            type="button"
+            onClick={() => void handleLookup()}
+            disabled={lookupLoading || !lookupAttester.trim()}
+            className="px-4 py-2 rounded text-sm font-medium shrink-0 disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--color-btc)',
+              color: '#000',
+            }}
+          >
+            {lookupLoading ? <Spinner size="sm" /> : 'Find'}
+          </button>
+        </div>
+        {lookupResult === 'pending' && (
+          <p className="text-xs" style={{ color: 'var(--color-success)' }}>
+            Dispute found and added to your list above.
+          </p>
+        )}
+        {lookupResult && lookupResult !== 'pending' && (
+          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Status: <Badge variant={lookupResult === 'none' ? 'none' : lookupResult as 'resolved' | 'rejected'} />
+          </p>
+        )}
+      </div>
 
       {(error || settleError) && (
         <p className="text-sm" style={{ color: 'var(--color-error)' }}>
